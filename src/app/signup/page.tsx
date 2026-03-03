@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const planId = searchParams.get('plan') || 'annual-1'
@@ -141,5 +141,24 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+function SignupLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupLoading />}>
+      <SignupContent />
+    </Suspense>
   )
 }

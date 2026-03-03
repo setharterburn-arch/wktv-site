@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -19,7 +19,7 @@ const PLANS: Record<string, { name: string; price: number; connections: number; 
   'lifetime-5': { name: 'Lifetime 5 Connections', price: 850, connections: 5, duration: 'lifetime' },
 }
 
-export default function PaymentPage() {
+function PaymentContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const planId = searchParams.get('plan') || 'annual-1'
@@ -210,5 +210,24 @@ export default function PaymentPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+function PaymentLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<PaymentLoading />}>
+      <PaymentContent />
+    </Suspense>
   )
 }
