@@ -2,19 +2,20 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Logo } from '@/components/Logo'
+import Image from 'next/image'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { siteConfig } from '@/config/site'
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const planId = searchParams.get('plan') || 'annual-1'
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
-    referredBy: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,8 +34,6 @@ export default function SignupPage() {
         data: {
           name: formData.name,
           phone: formData.phone,
-          referred_by: formData.referredBy,
-          region: siteConfig.region, // KY or TN
         },
       },
     })
@@ -45,37 +44,34 @@ export default function SignupPage() {
       return
     }
 
-    router.push('/renew')
+    // Redirect to payment page with plan
+    router.push(`/pay?plan=${planId}`)
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <Logo className="w-10 h-10" />
-            <div className="flex flex-col items-start">
-              <span className="text-2xl font-bold tracking-tight leading-none">OMEGA TV</span>
-              <span className="text-xs text-gray-500 uppercase tracking-widest">{siteConfig.regionName}</span>
-            </div>
+          <Link href="/" className="inline-block">
+            <Image src="/wktv-logo.jpg" alt="WKTV" width={80} height={80} className="mx-auto rounded" />
           </Link>
         </div>
 
         {/* Card */}
-        <div className="border border-gray-200 p-8">
+        <div className="card">
           <h1 className="text-2xl font-bold text-center mb-2 tracking-tight">CREATE ACCOUNT</h1>
-          <p className="text-gray-500 text-center mb-8">Sign up to start streaming</p>
+          <p className="text-gray-400 text-center mb-8">Sign up to start streaming</p>
 
           <form onSubmit={handleSignup} className="space-y-5">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 text-red-600 text-sm">
+              <div className="p-4 bg-red-900/30 border border-red-700 text-red-400 text-sm rounded">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
               <input
                 type="text"
                 value={formData.name}
@@ -84,24 +80,22 @@ export default function SignupPage() {
                 className="w-full"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">Use the name on your IPTV account if you have one</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="(555) 123-4567"
                 className="w-full"
-                required
               />
-              <p className="text-xs text-gray-400 mt-1">Used to link your existing IPTV account</p>
+              <p className="text-xs text-gray-500 mt-1">Optional - for account recovery</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
               <input
                 type="email"
                 value={formData.email}
@@ -113,7 +107,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
               <input
                 type="password"
                 value={formData.password}
@@ -125,34 +119,26 @@ export default function SignupPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Who referred you? <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input
-                type="text"
-                value={formData.referredBy}
-                onChange={(e) => setFormData({ ...formData, referredBy: e.target.value })}
-                placeholder="Friend's name or username"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-400 mt-1">Refer a friend who signs up for a year and get 6 months free!</p>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Creating Account...' : 'Continue to Payment'}
             </button>
           </form>
 
           <p className="text-center text-gray-500 mt-6">
             Already have an account?{' '}
-            <Link href="/login" className="text-black font-medium hover:underline">
+            <Link href="/login" className="text-red-500 font-medium hover:underline">
               Sign in
             </Link>
           </p>
         </div>
+
+        <p className="text-center text-gray-600 text-sm mt-6">
+          <Link href="/" className="hover:text-white">← Back to Home</Link>
+        </p>
       </div>
     </div>
   )

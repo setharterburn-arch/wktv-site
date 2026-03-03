@@ -1,450 +1,271 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Logo } from '@/components/Logo';
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
 
-interface SupportRequest {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  status: string;
-  created_at: string;
-}
-
-interface PendingMatch {
-  id: string;
-  user_id: string;
-  user_name: string;
-  user_phone: string;
-  user_email: string;
-  matched_iptv_username: string | null;
-  match_confidence: number | null;
-  status: string;
-  created_at: string;
-}
-
-interface Subscription {
-  id: string;
-  user_id: string;
-  iptv_username: string;
-  status: string;
-  expires_at: string | null;
-  created_at: string;
-}
-
-interface Payment {
-  id: string;
-  user_id: string;
-  amount_cents: number;
-  status: string;
-  blockchyp_transaction_id: string;
-  created_at: string;
-  user_email: string;
-  user_name: string;
-  user_phone: string;
+interface PendingSignup {
+  id: string
+  user_id: string
+  name: string
+  email: string
+  phone: string | null
+  plan_id: string
+  plan_name: string
+  amount_cents: number
+  payment_method: string
+  cashapp_name: string
+  status: string
+  notes: string | null
+  created_at: string
 }
 
 export default function AdminPage() {
-  const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('payments');
-  
-  const [supportRequests, setSupportRequests] = useState<SupportRequest[]>([]);
-  const [pendingMatches, setPendingMatches] = useState<PendingMatch[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  
-  const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
-  const [linkModal, setLinkModal] = useState<{ userId: string; email: string } | null>(null);
-  const [iptvUsername, setIptvUsername] = useState('');
-  const [iptvPassword, setIptvPassword] = useState('');
-  
-  const supabase = createClient();
-  const router = useRouter();
+  const [pendingSignups, setPendingSignups] = useState<PendingSignup[]>([])
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [filter, setFilter] = useState<'pending' | 'approved' | 'all'>('pending')
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    fetchPendingSignups()
+  }, [filter])
 
-  async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+  async function fetchPendingSignups() {
+    setLoading(true)
     try {
-      const res = await fetch('/api/admin/data');
-      if (res.status === 401) {
-        router.push('/dashboard');
-        return;
+      const res = await fetch(`/api/admin/signups?status=${filter}`)
+      const data = await res.json()
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPendingSignups(data.signups || [])
       }
-      const data = await res.json();
-      setSupportRequests(data.supportRequests || []);
-      setPendingMatches(data.pendingMatches || []);
-      setSubscriptions(data.subscriptions || []);
-      setPayments(data.payments || []);
-      setAuthorized(true);
-    } catch {
-      router.push('/dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/data');
-      const data = await res.json();
-      setSupportRequests(data.supportRequests || []);
-      setPendingMatches(data.pendingMatches || []);
-      setSubscriptions(data.subscriptions || []);
-      setPayments(data.payments || []);
     } catch (err) {
-      console.error('Failed to load admin data:', err);
+      setError('Failed to fetch data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-  async function resolveRequest(id: string) {
-    await fetch('/api/admin/resolve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, type: 'support' }),
-    });
-    loadData();
+  async function approveSignup(signupId: string) {
+    setProcessing(signupId)
+    try {
+      const res = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signupId }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        alert(data.error)
+      } else {
+        alert('Approved! Account created.')
+        fetchPendingSignups()
+      }
+    } catch (err) {
+      alert('Failed to approve')
+    } finally {
+      setProcessing(null)
+    }
   }
 
-  async function linkAccount(userId: string) {
-    if (!iptvUsername) return;
+  async function rejectSignup(signupId: string) {
+    if (!confirm('Are you sure you want to reject this signup?')) return
     
-    await fetch('/api/admin/link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        userId, 
-        iptvUsername,
-        iptvPassword: iptvPassword || undefined,
-      }),
-    });
-    
-    setLinkModal(null);
-    setIptvUsername('');
-    setIptvPassword('');
-    loadData();
+    setProcessing(signupId)
+    try {
+      const res = await fetch('/api/admin/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signupId }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        alert(data.error)
+      } else {
+        alert('Rejected')
+        fetchPendingSignups()
+      }
+    } catch (err) {
+      alert('Failed to reject')
+    } finally {
+      setProcessing(null)
+    }
   }
 
   function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleString('en-US', {
+    const date = new Date(dateStr)
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-    });
+      hour12: true,
+    })
   }
-
-  if (!authorized || loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">{loading ? 'Loading...' : 'Checking authorization...'}</div>
-      </div>
-    );
-  }
-
-  const openRequests = supportRequests.filter(r => r.status === 'open');
-  const pendingLinks = pendingMatches.filter(m => m.status === 'pending');
-  const expiringSoon = subscriptions.filter(s => {
-    if (!s.expires_at) return false;
-    const days = Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    return days <= 7 && days > 0;
-  });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Logo className="w-8 h-8" />
-            <span className="text-lg font-bold tracking-tight">OMEGA TV ADMIN</span>
+      <header className="border-b border-gray-800 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Image src="/wktv-logo.jpg" alt="WKTV" width={40} height={40} className="rounded" />
+            </Link>
+            <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          </div>
+          <Link href="/" className="text-gray-400 hover:text-white text-sm">
+            ← Back to Site
           </Link>
-          <button 
-            onClick={loadData} 
-            className="text-gray-400 hover:text-black text-sm font-medium transition-colors"
-          >
-            {loading ? '↻ Loading...' : '↻ Refresh'}
-          </button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <div className="border border-gray-200 p-4 flex items-center gap-4">
-            <span className="text-3xl">💰</span>
-            <div>
-              <p className="text-2xl font-bold">{payments.length}</p>
-              <p className="text-sm text-gray-500">Total Payments</p>
-            </div>
+        <div className="grid grid-cols-3 gap-6 mb-8">
+          <div className="card text-center">
+            <p className="text-4xl font-bold text-yellow-500">
+              {pendingSignups.filter(s => s.status === 'pending').length}
+            </p>
+            <p className="text-gray-400 text-sm mt-1">Pending</p>
           </div>
-          <div className="border border-gray-200 p-4 flex items-center gap-4">
-            <span className="text-3xl">💬</span>
-            <div>
-              <p className="text-2xl font-bold">{openRequests.length}</p>
-              <p className="text-sm text-gray-500">Open Requests</p>
-            </div>
+          <div className="card text-center">
+            <p className="text-4xl font-bold text-green-500">
+              {pendingSignups.filter(s => s.status === 'approved').length}
+            </p>
+            <p className="text-gray-400 text-sm mt-1">Approved Today</p>
           </div>
-          <div className="border border-gray-200 p-4 flex items-center gap-4">
-            <span className="text-3xl">🔗</span>
-            <div>
-              <p className="text-2xl font-bold">{pendingLinks.length}</p>
-              <p className="text-sm text-gray-500">Pending Links</p>
-            </div>
-          </div>
-          <div className="border border-gray-200 p-4 flex items-center gap-4">
-            <span className="text-3xl">⏰</span>
-            <div>
-              <p className="text-2xl font-bold">{expiringSoon.length}</p>
-              <p className="text-sm text-gray-500">Expiring Soon</p>
-            </div>
+          <div className="card text-center">
+            <p className="text-4xl font-bold text-gray-500">
+              {pendingSignups.length}
+            </p>
+            <p className="text-gray-400 text-sm mt-1">Total</p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto">
-          {[
-            { id: 'payments', label: 'Payments', count: payments.length },
-            { id: 'support', label: 'Support', count: openRequests.length },
-            { id: 'pending', label: 'Pending Links', count: pendingLinks.length },
-            { id: 'users', label: 'All Users', count: subscriptions.length },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-medium text-sm uppercase tracking-wide transition-colors border-b-2 -mb-px ${
-                activeTab === tab.id
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-400 hover:text-black'
-              }`}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span className="ml-2 bg-gray-100 px-2 py-0.5 text-xs">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+        {/* Filter */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setFilter('pending')}
+            className={`px-4 py-2 rounded ${filter === 'pending' ? 'bg-red-600' : 'bg-gray-800'}`}
+          >
+            Pending
+          </button>
+          <button
+            onClick={() => setFilter('approved')}
+            className={`px-4 py-2 rounded ${filter === 'approved' ? 'bg-red-600' : 'bg-gray-800'}`}
+          >
+            Approved
+          </button>
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-red-600' : 'bg-gray-800'}`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => fetchPendingSignups()}
+            className="px-4 py-2 rounded bg-gray-800 ml-auto"
+          >
+            🔄 Refresh
+          </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="border border-gray-200">
-          {activeTab === 'payments' && (
-            <div className="divide-y divide-gray-200">
-              {payments.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No payments yet</div>
-              ) : (
-                payments.map(payment => (
-                  <div key={payment.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                            payment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {payment.status.toUpperCase()}
-                          </span>
-                          <span className="font-bold text-lg">${(payment.amount_cents / 100).toFixed(2)}</span>
-                          <span className="text-sm text-gray-400">{formatDate(payment.created_at)}</span>
-                        </div>
-                        <p className="font-medium">{payment.user_name}</p>
-                        <p className="text-sm text-gray-500">
-                          {payment.user_email}
-                          {payment.user_phone && ` • 📱 ${payment.user_phone}`}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 font-mono">
-                          Tx: {payment.blockchyp_transaction_id}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+        {/* Error */}
+        {error && (
+          <div className="p-4 bg-red-900/30 border border-red-700 text-red-400 mb-6 rounded">
+            {error}
+          </div>
+        )}
 
-          {activeTab === 'support' && (
-            <div className="divide-y divide-gray-200">
-              {supportRequests.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No support requests yet</div>
-              ) : (
-                supportRequests.map(req => (
-                  <div key={req.id} className="p-4">
-                    <div 
-                      className="flex items-start justify-between cursor-pointer"
-                      onClick={() => setExpandedRequest(expandedRequest === req.id ? null : req.id)}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`w-2 h-2 rounded-full ${
-                            req.status === 'open' ? 'bg-yellow-400' : 'bg-green-400'
-                          }`} />
-                          <span className="font-medium">{req.subject}</span>
-                          <span className="text-sm text-gray-400">{formatDate(req.created_at)}</span>
-                        </div>
-                        <p className="text-sm text-gray-500">{req.name} • {req.email}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {req.status === 'open' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); resolveRequest(req.id); }}
-                            className="p-2 hover:bg-gray-100 transition-colors text-green-600"
-                            title="Mark resolved"
-                          >
-                            ✓
-                          </button>
-                        )}
-                        <span className="text-gray-400">{expandedRequest === req.id ? '▲' : '▼'}</span>
-                      </div>
-                    </div>
-                    {expandedRequest === req.id && (
-                      <div className="mt-3 p-3 bg-gray-50">
-                        <p className="whitespace-pre-wrap text-sm">{req.message}</p>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === 'pending' && (
-            <div className="divide-y divide-gray-200">
-              {pendingMatches.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No pending account links</div>
-              ) : (
-                pendingMatches.map(match => (
-                  <div key={match.id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{match.user_name || match.user_email}</p>
-                      <p className="text-sm text-gray-500">
-                        {match.user_phone && `📱 ${match.user_phone} • `}
-                        {match.user_email}
-                      </p>
-                      {match.matched_iptv_username && (
-                        <p className="text-sm text-blue-600 mt-1">
-                          Possible match: {match.matched_iptv_username} ({Math.round((match.match_confidence || 0) * 100)}%)
-                        </p>
+        {/* Loading */}
+        {loading ? (
+          <div className="text-center py-12 text-gray-400">Loading...</div>
+        ) : pendingSignups.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No {filter === 'all' ? '' : filter} signups found
+          </div>
+        ) : (
+          /* Signups Table */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800 text-left text-gray-400 text-sm">
+                  <th className="pb-3 font-medium">Date</th>
+                  <th className="pb-3 font-medium">Customer</th>
+                  <th className="pb-3 font-medium">Plan</th>
+                  <th className="pb-3 font-medium">Amount</th>
+                  <th className="pb-3 font-medium">Cash App</th>
+                  <th className="pb-3 font-medium">Status</th>
+                  <th className="pb-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingSignups.map((signup) => (
+                  <tr key={signup.id} className="border-b border-gray-800/50">
+                    <td className="py-4 text-sm text-gray-400">
+                      {formatDate(signup.created_at)}
+                    </td>
+                    <td className="py-4">
+                      <div className="font-medium">{signup.name}</div>
+                      <div className="text-sm text-gray-500">{signup.email}</div>
+                      {signup.phone && (
+                        <div className="text-sm text-gray-500">{signup.phone}</div>
                       )}
-                    </div>
-                    <button
-                      onClick={() => setLinkModal({ userId: match.user_id, email: match.user_email })}
-                      className="btn-primary text-sm"
-                    >
-                      Link
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === 'users' && (
-            <div className="divide-y divide-gray-200">
-              {subscriptions.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No linked users yet</div>
-              ) : (
-                subscriptions.map(sub => {
-                  const daysLeft = sub.expires_at 
-                    ? Math.ceil((new Date(sub.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                    : null;
-                  return (
-                    <div key={sub.id} className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">@{sub.iptv_username}</p>
-                        <p className="text-sm text-gray-500">
-                          {sub.status === 'active' ? (
-                            <span className="text-green-600">Active</span>
-                          ) : (
-                            <span className="text-red-600">{sub.status}</span>
-                          )}
-                          {daysLeft !== null && (
-                            <span className={`ml-2 ${daysLeft <= 3 ? 'text-red-600' : daysLeft <= 7 ? 'text-yellow-600' : 'text-gray-400'}`}>
-                              • {daysLeft > 0 ? `${daysLeft} days left` : 'Expired'}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Link Account Modal */}
-      {linkModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-gray-200 p-6 max-w-md w-full">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">LINK IPTV ACCOUNT</h2>
-              <button onClick={() => setLinkModal(null)} className="text-gray-400 hover:text-black text-xl">
-                ×
-              </button>
-            </div>
-            <p className="text-gray-500 mb-4">Linking account for: {linkModal.email}</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">IPTV Username</label>
-                <input
-                  type="text"
-                  value={iptvUsername}
-                  onChange={(e) => setIptvUsername(e.target.value)}
-                  placeholder="username from panel"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">IPTV Password (optional)</label>
-                <input
-                  type="text"
-                  value={iptvPassword}
-                  onChange={(e) => setIptvPassword(e.target.value)}
-                  placeholder="password if known"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setLinkModal(null)}
-                className="flex-1 btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => linkAccount(linkModal.userId)}
-                disabled={!iptvUsername}
-                className="flex-1 btn-primary disabled:opacity-50"
-              >
-                Link Account
-              </button>
-            </div>
+                    </td>
+                    <td className="py-4">
+                      <div className="font-medium">{signup.plan_name}</div>
+                      <div className="text-sm text-gray-500">{signup.plan_id}</div>
+                    </td>
+                    <td className="py-4">
+                      <span className="text-green-400 font-bold">
+                        ${(signup.amount_cents / 100).toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <span className="bg-green-900/30 text-green-400 px-2 py-1 rounded text-sm">
+                        {signup.cashapp_name}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        signup.status === 'pending' ? 'bg-yellow-900/30 text-yellow-400' :
+                        signup.status === 'approved' ? 'bg-green-900/30 text-green-400' :
+                        'bg-red-900/30 text-red-400'
+                      }`}>
+                        {signup.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      {signup.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => approveSignup(signup.id)}
+                            disabled={processing === signup.id}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                          >
+                            {processing === signup.id ? '...' : '✓ Approve'}
+                          </button>
+                          <button
+                            onClick={() => rejectSignup(signup.id)}
+                            disabled={processing === signup.id}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                          >
+                            ✗
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  );
+  )
 }

@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Logo } from '@/components/Logo'
 import { createClient } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -19,44 +19,45 @@ export default function LoginPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
+    
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      setError(error.message)
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
-    } else {
-      router.push('/dashboard')
+      return
     }
+
+    router.push('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <Logo className="w-10 h-10" />
-            <span className="text-2xl font-bold tracking-tight">OMEGA TV</span>
+          <Link href="/" className="inline-block">
+            <Image src="/wktv-logo.jpg" alt="WKTV" width={80} height={80} className="mx-auto rounded" />
           </Link>
         </div>
 
         {/* Card */}
-        <div className="border border-gray-200 p-8">
-          <h1 className="text-2xl font-bold text-center mb-2 tracking-tight">WELCOME BACK</h1>
-          <p className="text-gray-500 text-center mb-8">Sign in to manage your subscription</p>
+        <div className="card">
+          <h1 className="text-2xl font-bold text-center mb-2 tracking-tight">SIGN IN</h1>
+          <p className="text-gray-400 text-center mb-8">Access your account</p>
 
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 text-red-600 text-sm">
+              <div className="p-4 bg-red-900/30 border border-red-700 text-red-400 text-sm rounded">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
               <input
                 type="email"
                 value={email}
@@ -68,7 +69,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
               <input
                 type="password"
                 value={password}
@@ -90,11 +91,15 @@ export default function LoginPage() {
 
           <p className="text-center text-gray-500 mt-6">
             Don't have an account?{' '}
-            <Link href="/signup" className="text-black font-medium hover:underline">
+            <Link href="/signup" className="text-red-500 font-medium hover:underline">
               Sign up
             </Link>
           </p>
         </div>
+
+        <p className="text-center text-gray-600 text-sm mt-6">
+          <Link href="/" className="hover:text-white">← Back to Home</Link>
+        </p>
       </div>
     </div>
   )
