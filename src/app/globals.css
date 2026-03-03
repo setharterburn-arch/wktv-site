@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   WKTV - Dark Theme with Red Accents
+   Black background, red highlights, bold look
+   ======================================== */
+
+:root {
+  --foreground: #ffffff;
+  --background: #000000;
+  --red-primary: #DC2626;
+  --red-light: #EF4444;
+  --red-dark: #991B1B;
+  --grey-100: #1f1f1f;
+  --grey-200: #2a2a2a;
+  --grey-300: #3a3a3a;
+  --grey-400: #6b7280;
+  --grey-500: #9ca3af;
+  --grey-600: #d1d5db;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Primary Button - Red fill */
+.btn-primary {
+  background: var(--red-primary);
+  color: #fff;
+  padding: 14px 32px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--red-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button - Red outline */
+.btn-secondary {
+  background: transparent;
+  color: #fff;
+  padding: 14px 32px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 14px;
+  border: 1px solid var(--grey-300);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--grey-200);
+  border-color: var(--grey-400);
+}
+
+/* Card - Dark style */
+.card {
+  background: var(--grey-100);
+  border: 1px solid var(--grey-200);
+  padding: 32px;
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.1);
+  border-color: var(--grey-300);
+}
+
+/* Card variants */
+.card-highlight {
+  background: var(--grey-200);
+  border: 2px solid var(--red-primary);
+}
+
+/* Input styles - Dark */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+textarea,
+.input-field {
+  background: var(--grey-100);
+  border: 1px solid var(--grey-300);
+  padding: 14px 16px;
+  color: #fff;
+  width: 100%;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="tel"]:hover,
+input[type="number"]:hover,
+textarea:hover,
+.input-field:hover {
+  border-color: var(--grey-400);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+.input-field:focus {
+  outline: none;
+  border-color: var(--red-primary);
+  box-shadow: 0 0 0 1px var(--red-primary);
+}
+
+input::placeholder,
+textarea::placeholder,
+.input-field::placeholder {
+  color: var(--grey-400);
+}
+
+/* Nav link style */
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--grey-500);
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #fff;
+}
+
+/* Section spacing */
+.section {
+  padding: 120px 24px;
+}
+
+.section-sm {
+  padding: 80px 24px;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--grey-200);
+  width: 100%;
+}
+
+/* Text utilities */
+.text-grey {
+  color: var(--grey-500);
+}
+
+.text-grey-dark {
+  color: var(--grey-600);
+}
+
+/* Red accent text */
+.text-red {
+  color: var(--red-primary);
+}
+
+/* Feature/best value badge */
+.badge-featured {
+  background: var(--red-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
