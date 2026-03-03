@@ -6,8 +6,8 @@ export const siteConfig = {
   domain: 'wktv.com', // Update when domain is purchased
   supportEmail: 'support@wktv.com',
   
-  // Payment info (update with actual details)
-  cashAppTag: '$WKTV', // Update with real $cashtag
+  // Payment info
+  cashAppTag: '$wirelesskinect',
   cryptoWallets: {
     btc: '', // Add BTC address
     usdt: '', // Add USDT address (TRC20 or ERC20)
