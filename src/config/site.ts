@@ -42,7 +42,16 @@ export const siteConfig = {
   },
   
   // Troubleshooting videos (add YouTube IDs later)
-  troubleshootingVideos: [],
+  troubleshootingVideos: [] as TroubleshootingVideo[],
 }
 
 export type PlanCategory = 'trial' | 'monthly' | 'annual' | 'lifetime'
+export type VideoCategory = 'setup' | 'troubleshooting' | 'account'
+
+export interface TroubleshootingVideo {
+  id: string
+  title: string
+  description: string
+  youtubeId: string
+  category: VideoCategory
+}

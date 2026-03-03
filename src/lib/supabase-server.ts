@@ -16,3 +16,9 @@ export function createAdminClient() {
     }
   )
 }
+
+// Alias for backwards compatibility with API routes
+export const createServerSupabase = createAdminClient
+
+// Singleton admin client instance
+export const adminSupabase = createAdminClient()
