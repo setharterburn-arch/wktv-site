@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://149.56.97.159:5002';
 

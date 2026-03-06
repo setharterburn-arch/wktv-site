@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic'
 import { createServerSupabase, adminSupabase } from '@/lib/supabase-server';
 
 const IPTV_PANEL_URL = process.env.IPTV_PANEL_URL!;

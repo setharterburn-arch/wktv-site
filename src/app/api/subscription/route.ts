@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { adminSupabase } from '@/lib/supabase-server'
 import { getSession, getSessionCookieName } from '@/lib/auth'
 
