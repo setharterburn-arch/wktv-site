@@ -160,25 +160,14 @@ export async function getSession(token: string): Promise<User | null> {
   
   const supabase = getSupabaseAdmin()
   
-  // Find session and join with user
-  const { data: session, error } = await supabase
+  // Find session
+  const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select(`
-      id,
-      expires_at,
-      user:users (
-        id,
-        email,
-        name,
-        phone,
-        role,
-        created_at
-      )
-    `)
+    .select('id, user_id, expires_at')
     .eq('token', token)
     .single()
   
-  if (error || !session) return null
+  if (sessionError || !session) return null
   
   // Check if expired
   if (new Date(session.expires_at) < new Date()) {
@@ -186,7 +175,16 @@ export async function getSession(token: string): Promise<User | null> {
     return null
   }
   
-  return session.user as unknown as User
+  // Get user
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id, email, name, phone, role, created_at')
+    .eq('id', session.user_id)
+    .single()
+  
+  if (userError || !user) return null
+  
+  return user as User
 }
 
 export async function getCurrentUser(): Promise<User | null> {
