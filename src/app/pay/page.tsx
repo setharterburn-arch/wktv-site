@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { siteConfig } from '@/config/site'
-import { createClient } from '@/lib/supabase'
 
 const PLANS: Record<string, { name: string; price: number; connections: number; duration: string }> = {
   'trial-free': { name: 'Free 24-Hour Trial', price: 0, connections: 1, duration: '24 hours' },
@@ -30,20 +29,26 @@ function PaymentContent() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [user, setUser] = useState<any>(null)
-
-  const supabase = createClient()
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
   useEffect(() => {
     checkAuth()
   }, [])
 
   async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (!data.user) {
+        router.push(`/signup?plan=${planId}`)
+        return
+      }
+      setUser(data.user)
+    } catch {
       router.push(`/signup?plan=${planId}`)
-      return
+    } finally {
+      setCheckingAuth(false)
     }
-    setUser(session.user)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -81,6 +86,17 @@ function PaymentContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   if (plan.price === 0) {

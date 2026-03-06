@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase, adminSupabase } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-server'
+import { getSession, getSessionCookieName } from '@/lib/auth'
 
 const AUTOMATION_URL = process.env.AUTOMATION_URL || 'http://149.56.97.159:3007'
 
@@ -21,9 +22,9 @@ async function fetchPanelExpiry(iptvUsername: string): Promise<{ expDate: string
 
 export async function GET(request: NextRequest) {
   try {
-    // Always require authentication - user can only view their own subscription
-    const supabase = createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Get user from custom auth session
+    const token = request.cookies.get(getSessionCookieName())?.value
+    const user = token ? await getSession(token) : null
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
           })
         : 'Unknown',
       daysRemaining: daysRemaining !== null ? Math.max(0, daysRemaining) : null,
-      planName: subscription.plan_name || 'Omega TV Premium',
+      planName: subscription.plan_name || 'WKTV Premium',
       // Full subscription object for renew page
       subscription: {
         id: subscription.id,

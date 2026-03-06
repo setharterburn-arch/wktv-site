@@ -4,7 +4,6 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
 
 function SignupContent() {
   const router = useRouter()
@@ -25,27 +24,27 @@ function SignupContent() {
     setError('')
     setLoading(true)
 
-    const supabase = createClient()
-    
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          name: formData.name,
-          phone: formData.phone,
-        },
-      },
-    })
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        setError(data.error || 'Signup failed')
+        setLoading(false)
+        return
+      }
 
-    if (signUpError) {
-      setError(signUpError.message)
+      // Redirect to payment page with plan
+      router.push(`/pay?plan=${planId}`)
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
-
-    // Redirect to payment page with plan
-    router.push(`/pay?plan=${planId}`)
   }
 
   return (

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { getSession, getSessionCookieName } from '@/lib/auth'
 
 // Admin client for database operations
 const adminSupabase = createClient(
@@ -13,38 +12,22 @@ const adminSupabase = createClient(
   }
 )
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { planId, planName, amountCents, connections, duration, cashAppName } = body
 
-    // Get user from session
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Get user from custom auth session
+    const token = request.cookies.get(getSessionCookieName())?.value
+    const user = token ? await getSession(token) : null
+    
+    if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     // Get user metadata
-    const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown'
-    const userPhone = user.user_metadata?.phone || null
+    const userName = user.name || user.email?.split('@')[0] || 'Unknown'
+    const userPhone = user.phone || null
     const userEmail = user.email || ''
 
     // Create pending signup record

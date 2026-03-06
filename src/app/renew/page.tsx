@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
@@ -43,7 +42,6 @@ export default function RenewPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   
-  const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -51,12 +49,17 @@ export default function RenewPage() {
   }, []);
 
   async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.user) {
+        router.push('/login');
+        return;
+      }
+      fetchSubscription();
+    } catch {
       router.push('/login');
-      return;
     }
-    fetchSubscription();
   }
 
   async function fetchSubscription() {
@@ -175,7 +178,7 @@ export default function RenewPage() {
           </Link>
           <Link href="/" className="flex items-center gap-2">
             <Logo className="w-6 h-6" />
-            <span className="font-bold text-sm tracking-tight">OMEGA TV</span>
+            <span className="font-bold text-sm tracking-tight">WKTV</span>
           </Link>
         </div>
       </header>
@@ -187,7 +190,7 @@ export default function RenewPage() {
           </h1>
           <p className="text-gray-500">
             {isNewCustomer 
-              ? 'Subscribe to Omega TV' 
+              ? 'Subscribe to WKTV' 
               : 'Keep watching without interruption'}
           </p>
         </div>

@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Logo } from '@/components/Logo'
-import { createClient } from '@/lib/supabase'
+
+interface User {
+  id: string
+  email: string
+  name: string | null
+  phone: string | null
+  role: string
+}
 
 interface SubscriptionData {
   status: 'active' | 'expired' | 'pending' | 'unlinked'
@@ -16,19 +23,27 @@ interface SubscriptionData {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-    
-    // Middleware handles auth redirects, so we can trust user is authenticated
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      fetchSubscription()
-    })
-  }, [])
+    // Fetch current user from custom auth
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user)
+          fetchSubscription()
+        } else {
+          // Not logged in, middleware should have caught this but just in case
+          router.push('/login')
+        }
+      })
+      .catch(() => {
+        router.push('/login')
+      })
+  }, [router])
 
   const fetchSubscription = async () => {
     try {
@@ -43,9 +58,7 @@ export default function DashboardPage() {
   }
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.refresh() // Clear Next.js cache
+    await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/')
   }
 
@@ -57,7 +70,7 @@ export default function DashboardPage() {
           <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo className="w-8 h-8" />
-              <span className="text-lg font-bold tracking-tight">OMEGA TV</span>
+              <span className="text-lg font-bold tracking-tight">WKTV</span>
             </Link>
             <div className="flex items-center gap-6">
               <div className="h-4 w-20 bg-gray-200 animate-pulse rounded"></div>
@@ -101,7 +114,7 @@ export default function DashboardPage() {
     )
   }
 
-  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Customer'
+  const userName = user?.name || user?.email?.split('@')[0] || 'Customer'
 
   return (
     <div className="min-h-screen bg-white">
@@ -110,7 +123,7 @@ export default function DashboardPage() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Logo className="w-8 h-8" />
-            <span className="text-lg font-bold tracking-tight">OMEGA TV</span>
+            <span className="text-lg font-bold tracking-tight">WKTV</span>
           </Link>
           <div className="flex items-center gap-6">
             <span className="text-gray-500 text-sm">Hi, {userName}</span>
@@ -139,7 +152,7 @@ export default function DashboardPage() {
               <p className="text-gray-500 mb-6">
                 {subscription?.status === 'pending' 
                   ? 'Your account is being set up. Subscribe below if you haven\'t paid yet.'
-                  : 'Subscribe to Omega TV to start streaming.'}
+                  : 'Subscribe to WKTV to start streaming.'}
               </p>
               <Link href="/renew" className="btn-primary inline-block">
                 Subscribe Now
