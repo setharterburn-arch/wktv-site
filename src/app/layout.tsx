@@ -11,6 +11,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'WKTV - Watch Anywhere | Stream 10,000+ Channels',
   description: '10,000+ channels, movies, sports, and live TV. Stream anywhere in the USA on any device.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({
