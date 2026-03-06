@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 const SESSION_COOKIE_NAME = 'wktv_session'
 
 export async function GET(request: NextRequest) {
