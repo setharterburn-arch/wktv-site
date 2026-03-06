@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSession, getSessionCookieName } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // Admin client for database operations
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,10 +14,37 @@ const adminSupabase = createClient(
   }
 )
 
+// Send Pushover notification
+async function sendPushover(title: string, message: string) {
+  const PUSHOVER_APP_TOKEN = process.env.PUSHOVER_APP_TOKEN
+  const PUSHOVER_USER_KEY = process.env.WKTV_PUSHOVER_USER_KEY
+  
+  if (!PUSHOVER_APP_TOKEN || !PUSHOVER_USER_KEY) {
+    console.log('Pushover not configured, skipping notification')
+    return
+  }
+  
+  try {
+    await fetch('https://api.pushover.net/1/messages.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: PUSHOVER_APP_TOKEN,
+        user: PUSHOVER_USER_KEY,
+        title,
+        message,
+        sound: 'cashregister',
+      }),
+    })
+  } catch (err) {
+    console.error('Pushover notification failed:', err)
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { planId, planName, amountCents, connections, duration, cashAppName } = body
+    const { planId, planName, amountCents, connections, duration, cashAppName, isRenewal } = body
 
     // Get user from custom auth session
     const token = request.cookies.get(getSessionCookieName())?.value
@@ -29,6 +58,7 @@ export async function POST(request: NextRequest) {
     const userName = user.name || user.email?.split('@')[0] || 'Unknown'
     const userPhone = user.phone || null
     const userEmail = user.email || ''
+    const amount = (amountCents / 100).toFixed(0)
 
     // Create pending signup record
     const { data: signup, error: signupError } = await adminSupabase
@@ -68,7 +98,11 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create payment record:', paymentError)
     }
 
-    // TODO: Send notification to admin (Pushover, email, etc.)
+    // Send Pushover notification
+    await sendPushover(
+      `💰 WKTV ${isRenewal ? 'Renewal' : 'Payment'} - $${amount}`,
+      `Plan: ${planName}\nCustomer: ${userName}\nEmail: ${userEmail}\nCash App: ${cashAppName}${userPhone ? `\nPhone: ${userPhone}` : ''}`
+    )
 
     return NextResponse.json({
       success: true,
