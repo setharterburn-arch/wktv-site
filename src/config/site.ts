@@ -1,10 +1,10 @@
-// Site configuration - WKTV
+// Site configuration - OmegaTVKY
 export const siteConfig = {
-  name: 'WKTV',
+  name: 'OmegaTVKY',
   tagline: 'Watch Anywhere',
-  siteName: 'WKTV - Watch Anywhere',
-  domain: 'wktv.com', // Update when domain is purchased
-  supportEmail: 'support@wktv.com',
+  siteName: 'Omega TV Kentucky',
+  domain: 'omegatvky.com',
+  supportEmail: 'support@omegatvky.com',
   
   // Payment info
   cashAppTag: '$wirelesskinect',
@@ -20,25 +20,15 @@ export const siteConfig = {
     accent: '#FFFFFF', // White
   },
   
-  // Pricing plans
+  // Pricing plans - OmegaTVKY only has 2 annual plans
   plans: {
-    trial: [
-      { id: 'trial-free', name: 'Free 24-Hour Trial', price: 0, connections: 1, duration: '24 hours' },
-      { id: 'trial-1mo', name: '1-Month Trial', price: 15, connections: 1, duration: '1 month' },
-    ],
-    monthly: [
-      { id: 'monthly-1', name: 'Monthly', price: 25, connections: 1, duration: 'month', extra: '+$15/additional connection' },
-    ],
+    trial: [],
+    monthly: [],
     annual: [
-      { id: 'annual-1', name: '1 Connection', price: 150, connections: 1, duration: 'year' },
-      { id: 'annual-2', name: '2 Connections', price: 200, connections: 2, duration: 'year', label: 'Family' },
-      { id: 'annual-3', name: '3 Connections', price: 230, connections: 3, duration: 'year', label: 'Family' },
-      { id: 'annual-5', name: '5 Connections', price: 280, connections: 5, duration: 'year', label: 'Best Value', featured: true },
+      { id: 'annual-1', name: '1 Connection', price: 149, connections: 1, duration: 'year' },
+      { id: 'annual-5', name: '5 Connections', price: 199, connections: 5, duration: 'year', label: 'Best Value', featured: true },
     ],
-    lifetime: [
-      { id: 'lifetime-1', name: '1 Connection', price: 600, connections: 1, duration: 'lifetime' },
-      { id: 'lifetime-5', name: '5 Connections', price: 850, connections: 5, duration: 'lifetime' },
-    ],
+    lifetime: [],
   },
   
   // Troubleshooting videos (add YouTube IDs later)
